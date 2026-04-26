@@ -1,0 +1,28 @@
+hardikstatusboard.duckdns.org {
+  encode gzip
+  
+  # This handles the backend secret requests
+  handle /api/* {
+    reverse_proxy server:5001
+  }
+
+  # This handles the human visitors (Frontend)
+  handle {
+    reverse_proxy web:5173
+  }
+}
+
+# This is your second separate website block
+hardik-monitor.duckdns.org {
+  encode gzip
+  reverse_proxy uptime-kuma:3001
+} 
+
+#opening a port for prometheus and grafana below 
+
+prometheus.hardikstatusboard.duckdns.org {
+  reverse_proxy statusboard-prometheus:9090
+}
+grafana.hardikstatusboard.duckdns.org {
+  reverse_proxy statusboard-grafana:3000
+}

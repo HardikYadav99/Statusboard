@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# FIX 1: Un-indented scrape_configs to match global
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["statusboard-prometheus:9090"]
+
+  - job_name: "node-exporter"  # Usually uses an underscore to match the compose service name
+    static_configs:
+      - targets: ["statusboard-node-exporter:9100"]
+  
+  - job_name: "cadvisor"
+    static_configs:
+      # FIX 2: Changed target to targets
+      - targets: ["statusboard-cadvisor:8080"]
+
+  - job_name: "blackbox_http"
+    # FIX 3: Changed hyphen to underscore
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - https://hardikstatusboard.duckdns.org/
+          - https://hardikstatusboard.duckdns.org/api/health 
+    relabel_configs:
+      - source_labels: [__address__]
+        # FIX 4: Changed target_labels to target_label
+        target_label: __param_target
+      - source_labels: [__param_target]
+        # FIX 5: Changed target_labels to target_label
+        target_label: instance
+      # FIX 6: Changed target_labels to target_label
+      - target_label: __address__
+        replacement: statusboard-blackbox:9115

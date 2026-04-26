@@ -1,0 +1,104 @@
+---
+- name: Deploy Statusboard app
+  hosts: prod
+  become: true
+
+  vars:
+    app_dir: /opt/statusboard
+    ansible_ssh_private_key_file: "~/.ssh/my-vps-key"
+
+  tasks:
+    # Task 1: Ensure the folder exist on the server before we send files
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Task 2: Copy the compose.yaml to VPS (compose.yaml YAML Configuration)
+    - name: Copy Compose.yaml to VPS
+      copy:
+        src: ../../app/compose.yaml
+        dest: "{{ app_dir }}/compose.yaml"
+        mode: "0644"
+
+    # Task 3: Copy the caddy configuration (for reverse proxy)
+    - name: Copy Caddy File 
+      copy:
+        src: ../../app/Caddyfile
+        dest: "{{ app_dir }}/Caddyfile"
+        mode: "0644"
+
+    # Task 4: High-Speed Sync of backend data (recursive, delete, rsync opts)
+    - name: Sync backend (server) folder to VPS
+      synchronize: 
+        src: ../../app/server/
+        dest: "{{ app_dir }}/server/"
+        recursive: true
+        delete: true
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=dist"
+          - "--exclude=.env"
+
+    # Task 5: High-Speed Sync of frontend code 
+    - name: Sync frontend (web) folder to VPS
+      synchronize:
+        src: ../../app/web/
+        dest: "{{ app_dir }}/web/"      # FIXED: Added the missing }
+        recursive: true                 # dont look on the surface level if i say go in web and copy just dont copy web top files but copy every folder, subfolder and files in them
+        delete: true                    # if deleted from mac, get deleted from AWS too 
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=dist"
+          - "--exclude=.env"
+
+    # Task 6: Setup folder for performace test k6
+    - name: Setting up k6 folder 
+      file:
+        path: "{{ app_dir }}/ops/tests/k6"  # FIXED: Removed the extra " and trailing slash
+        state: directory
+        mode: "0755"
+
+    # Task 7: Sync k6 test scripts 
+    - name: Sync K6 tests (ops/test/k6 folder to VPS)
+      synchronize:
+        src: "../../ops/tests/k6/"
+        dest: "{{ app_dir }}/ops/tests/k6/"
+        recursive: true
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"              # FIXED: Changed -git to =.git
+
+    # Task 8: Set Environment Variable
+    - name: Writing Server ENV 
+      copy:
+        dest: "{{ app_dir }}/server/.env"
+        mode: "0600"
+        content: |
+          PORT=5001
+          CORS_ORIGIN=http://localhost:5173
+          MONGO_URI=mongodb://mongo:27017/devops-project-02
+          SLOW_MS=2500
+          SUBLYZER_PROXY_TARGET=https://sublyzer-backend-production.up.railway.app
+
+    # Task 9: Big Command that build and run docker containers
+    - name: Build and Start containers
+      shell: |
+        set -e
+        docker compose -f compose.yaml up -d --build
+      args:
+        chdir: "{{ app_dir }}"
+
+    # Task 10: Capture list of running containers to verify 
+    - name: Show running containers
+      shell: docker ps
+      register: docker_ps_output
+      changed_when: false
+
+    # Task 11: Print that list to your terminal 
+    - name: Print docker ps output
+      debug:
+        msg: "{{ docker_ps_output.stdout_lines }}"

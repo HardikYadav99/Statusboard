@@ -1,0 +1,5 @@
+aws_region = "us-east-1"
+instance-type = "t3-micro"
+server-name = "my-vps-host-name"
+
+key-name = "your-pemkey-name-here"

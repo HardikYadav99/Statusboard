@@ -1,0 +1,72 @@
+services:
+
+  mongo:
+    image: mongo:7.0
+    container_name: devops-project-02-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - shared-network
+
+  server:
+    build:
+      context: ./server
+    container_name: devops-project-02-server
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongo
+    ports:
+      - "5001:5001"
+    networks:
+      - shared-network
+
+  web:
+    build:
+      context: ./web
+    container_name: devops-project-02-web
+    depends_on:
+      - server
+    ports: 
+      - "5173:5173"
+    networks:
+      - shared-network
+  
+  caddy:
+    image: caddy:2-alpine
+    container_name: devops-project-02-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - server
+    networks:
+      - shared-network
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: devops-project-02-uptime-kuma
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma_data:/app/data
+    networks:
+      - shared-network
+
+volumes:
+    mongo_data:
+    caddy_data:
+    caddy_config:
+    uptime-kuma_data:
+  # Add this at the bottom, after the 'volumes' section
+networks:
+  shared-network:
+    external: true

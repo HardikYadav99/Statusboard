@@ -1,0 +1,17 @@
+#SSH Keys
+
+*.pem
+id_rsa*
+
+#Infrastructure secrets
+
+.terraform/
+*.tfvars
+terraform.tfstate*
+
+# OS FILES
+.DS_Store
+
+#local app secrets
+.env
+node_modules/
