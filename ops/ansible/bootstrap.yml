@@ -61,9 +61,9 @@
 
     # Task 8: Make sure docker start automatically 
     - name: Ensure docker services is running and enabled
-      service:                 # Fixed: 'service' (singular), not 'services'
+      service:                 
         name: docker
-        state: started         # Fixed: services use 'started', not 'present'
+        state: started         
         enabled: true
 
     #9 ensuring shared network exist 

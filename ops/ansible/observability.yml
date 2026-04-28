@@ -1,6 +1,6 @@
 ---
 - name: Deploy Observability stack prometheus and Grafana 
-  hosts: prod                     # FIX 1: Changed 'host' to 'hosts'
+  hosts: prod                    
   become: true
 
   vars:
@@ -14,9 +14,9 @@
         mode: "0755"
 
     - name: "Copy Observability compose yaml to VPS"
-      copy:                       # FIX 2: Ansible modules must be lowercase 'copy'
+      copy:                    
         src: ../observability/compose.yaml
-        dest: "{{ obs_dir }}/compose.yaml"  # FIX 3: Placed the whole path inside the quotes
+        dest: "{{ obs_dir }}/compose.yaml" 
         mode: "0644"
 
     - name: "Copy Prometheus yml to VPS"
@@ -36,7 +36,7 @@
         set -e
         docker compose -f compose.yaml up -d
       args:
-        chdir: "{{ obs_dir }}"    # FIX 4: Fixed indentation to align with 'chdir'
+        chdir: "{{ obs_dir }}"    
 
     - name: "Show running containers"
       shell: docker ps

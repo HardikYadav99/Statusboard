@@ -46,7 +46,7 @@
     - name: Sync frontend (web) folder to VPS
       synchronize:
         src: ../../app/web/
-        dest: "{{ app_dir }}/web/"      # FIXED: Added the missing }
+        dest: "{{ app_dir }}/web/"      
         recursive: true                 # dont look on the surface level if i say go in web and copy just dont copy web top files but copy every folder, subfolder and files in them
         delete: true                    # if deleted from mac, get deleted from AWS too 
         rsync_opts:
@@ -70,7 +70,7 @@
         recursive: true
         delete: true
         rsync_opts:
-          - "--exclude=.git"              # FIXED: Changed -git to =.git
+          - "--exclude=.git"             
 
     # Task 8: Set Environment Variable
     - name: Writing Server ENV 
